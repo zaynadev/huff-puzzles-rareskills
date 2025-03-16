@@ -10,5 +10,63 @@
 #define function maxOfArray(uint256[]) payable returns(uint256)
 
 #define macro MAIN() = takes(0) returns(0) {
-   
+
+    0x00 calldataload
+    0xe0 shr
+
+    __FUNC_SIG(maxOfArray)
+    eq maxOfArray jumpi
+
+    0x00 0x00 revert
+
+    maxOfArray:
+        0x04 calldataload           // offset
+        0x04 add                    // offset
+        dup1                        // offset, offset
+        calldataload                // length, offset
+        dup1                        // length, length, offset
+        
+        iszero empty jumpi          // length, offset
+        dup2                        // offset, length, offset
+        0x20 add                    // offset1, length, offset
+        dup1                        // offset1, offset1, length, offset
+        calldataload                // value1, offset1, length, offset
+        0x02                        // i, value1, offset1, length, offset
+        dup1                        // i, i, value1, offset1, length, offset
+        dup5                        // length, i, i, value1, offset1, length, offset
+
+        loop_start:
+            lt loop_end jumpi       // i, value1, offset1, length, offset
+            dup3                    // offset1, i, value1, offset1, length, offset
+            0x20 add                // offseti, i, value1, offset1, length, offset
+            dup1                    // offseti, offset2, i, value1, offset1, length, offset
+            swap4                   // offset1, offset2, i, value1, offset2, length, offset
+            pop                     // offseti, i, value1, offseti, length, offset
+            calldataload            // value2, i, value1, offseti, length, offset
+            dup3                    // value1, value2, i, value1, offseti, length, offset
+            dup2                    // value2, value1, value2, i, value1, offseti, length, offset
+            gt loop_update jumpi    // value2, i, value1, offseti, length, offset
+            pop                     // i, value1, offseti, length, offset
+            0x01 add                // i+1, value1, offseti, length, offset
+            dup1                    // i+1, i+1, value1, offseti, length, offset
+            dup5                    // length i+1, i+1, value2, offseti, length, offset
+            loop_start jump
+
+        loop_update:
+            swap2                    // value1, i, value2, offseti, length, offset
+            pop                      // i, value2, offseti, length, offset
+            0x01 add                 // i+1, value2, offseti, length, offset
+            dup1                     // i+1, i+1, value2, offseti, length, offset
+            dup5                     // length i+1, i+1, value2, offseti, length, offset
+            loop_start jump
+
+
+        loop_end:
+            pop
+            0x00 mstore
+            0x20 0x00 return
+
+        empty:
+            0x00 0x00 revert
+
 }
