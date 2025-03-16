@@ -5,8 +5,49 @@
  *  also have a getter function that returns how much an address has donated. Addresses can donate several times
  */
 
+#define constant BALANCE = FREE_STORAGE_POINTER()
+
 #define function donated(address) payable returns(uint256)
 
 #define macro MAIN() = takes(0) returns(0) {
+
+    0x00 calldataload
+    0xe0 shr
+
+    __FUNC_SIG(donated)
+    eq donated jumpi
+
+    0x00 callvalue gt receive jumpi
+
+    stop
+
+    donated:
+        [BALANCE]                     // slot0
+        caller 0x00 mstore            // slot0 
+        0x20 mstore                   // 
+        0x40
+        0x00
+        sha3                          // slotM
+        sload                         // data
+        0x00 mstore
+        0x20 0x00 return 
+
+    receive:
+        [BALANCE]                     // slot0
+        caller 0x00 mstore            // slot0
+        0x20 mstore                   // 
+        0x40
+        0x00
+        sha3                          // slotM
+        dup1                          // slotM, slotM
+        sload                         // oldValue, slotM
+        callvalue                     // newValue, oldValue, slotM
+        add                           // sum, slotM
+        swap1                         // slotM, sum
+        sstore                        //
+        stop
+
+
+
     
 }
