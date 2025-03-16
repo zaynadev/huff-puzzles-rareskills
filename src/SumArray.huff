@@ -13,4 +13,48 @@
 
 #define macro MAIN() = takes(0) returns(0) {
 
+    0x00 calldataload
+    0xe0 shr
+
+    __FUNC_SIG(sumArray)
+    eq sumArray jumpi
+
+    0x00 0x00 revert
+    
+    sumArray:
+        0x04 calldataload                // offset
+        0x04 add                         // offset
+        dup1                             // offset offset
+        calldataload                     // length offset
+        dup2                             // offset length offset
+        0x20 add                         // offset1 length offset
+        0x00                             // 0 offset1 length offset
+        0x01                             // 1 0 offset1 length offset
+        dup1                             // 1 1 0 offset1 length offset
+        dup5                             // length 1 1 0 offset1 length offset
+        loop_start:
+            lt loop_end jumpi            // 1 0 offset1 length offset
+            dup3                         // offset1 1 0 offset1 length offset
+            calldataload                 // value 1 0 offset1 length offset
+            dup3                         // 0 value 1 0 offset1 length offset
+            add                          // sum 1 0 offset1 length offset
+            swap2                        // 0 1 sum offset1 length offset
+            pop                          // 1 sum offset1 length offset
+            dup3                         // offset1 1 sum offset1 length offset
+            0x20 add                     // offset2 1 sum offset1 length offset
+            swap3                        // offset1 1 sum offset2 length offset
+            pop                          // 1 sum offset2 length offset
+            0x01                         // 1 1 sum offset2 length offset
+            add                          // i sum offset2 length offset
+            dup1                         // i i sum offset2 length offset
+            dup5                         // length i i sum offset2 length offset
+            loop_start jump
+
+        loop_end:
+            dup2 // sum i sum offset2 length offset
+            0x00 mstore
+            0x20 0x00 return
+
+
+
 }
