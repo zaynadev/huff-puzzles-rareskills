@@ -14,5 +14,57 @@
 
 
  #define macro MAIN() = takes(0) returns(0) {
+
+    0x00 calldataload
+    0xe0 shr
+    __FUNC_SIG(distribute)
+    eq distribute jumpi
+
+    0x00 0x00 revert
+
+    distribute:
+        0x04 calldataload                               // offset
+        0x04 add                                        // offset
+        dup1                                            // offset, offset
+        calldataload                                    // length, offset
+        dup1                                            // length, length, offset
+        iszero empty jumpi                              // length, offset
+        swap1                                           // offset, length
+        0x20 add                                        // offset1, length
+        dup2                                            // length, offset1, length
+        callvalue                                       // value, length, offset1, length
+        div                                             // valueToSend, offset1, length
+        0x01                                            // i, valueToSend, offset1, length
+        dup1                                            // i, i, valueToSend, offset1, length
+        dup5                                            // length, i, i, valueToSend, offset1, length
+        loop_start:
+            lt loop_end jumpi                           // i, valueToSend, offset1, length
+            0x00                                        // 0x00, i, valueToSend, offset1, length
+            0x00                                        // 0x00, 0x00, i, valueToSend, offset1, length
+            0x00                                        // 0x00, 0x00, 0x00, i, valueToSend, offset1, length
+            0x00                                        // 0x00, 0x00, 0x00, 0x00, i, valueToSend, offset1, length
+            dup6                                        // valueToSend, 0x00, 0x00, 0x00, 0x00, i, valueToSend, offset1, length
+            dup8                                        // offset1, valueToSend, 0x00, 0x00, 0x00, 0x00, i, valueToSend, offset1, length
+            calldataload                                // address, valueToSend, 0x00, 0x00, 0x00, 0x00, i, valueToSend, offset1, length
+            gas                                         // gas, address, valueToSend, 0x00, 0x00, 0x00, 0x00, i, valueToSend, offset1, length
+            call                                        // success, i, valueToSend, offset1, length
+            pop                                         // i, valueToSend, offset1, length
+            dup3                                        // offset1, i, valueToSend, offset1, length
+            0x20 add                                    // offset2, i, valueToSend, offset1, length
+            swap3                                       // offset1, i, valueToSend, offset2, length
+            pop                                         // i, valueToSend, offset2, length
+            0x01 add                                    // i+1, valueToSend, offset2, length
+            dup1                                        // i+1, i+1, valueToSend, offset2, length
+            dup5                                        // length, i+1, i+1, valueToSend, offset2, length
+            loop_start jump                             // length, i+1, i+1, valueToSend, offset2, length
+            
+            
+        loop_end:
+            stop
+        
+        
+
+    empty:
+        0x00 0x00 revert
    
  }
