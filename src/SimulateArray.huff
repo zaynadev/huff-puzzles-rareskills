@@ -15,6 +15,8 @@
  *  NOTICE: The contract should revert when an unrecognized function is called
  */
 
+ #define constant FREE_STORAGE = FREE_STORAGE_POINTER()
+
  #define function pushh(uint256 num) payable returns()
  #define function popp() payable returns()
  #define function read(uint256 index) payable returns(uint256)
@@ -25,5 +27,125 @@
  #define error ZeroArray()
 
  #define macro MAIN() = takes(0) returns(0) {
+
+    0x00 calldataload
+    0xe0 shr
+
+    dup1 __FUNC_SIG(pushh)
+    eq pushh jumpi
+
+    dup1 __FUNC_SIG(popp)
+    eq popp jumpi
+
+    dup1 __FUNC_SIG(read)
+    eq read jumpi
+
+    dup1 __FUNC_SIG(length)
+    eq length jumpi
+
+    __FUNC_SIG(write)
+    eq write jumpi
+
+    0x00 0x00 revert
+
+
+    pushh:
+        [FREE_STORAGE]                           // slot0
+        dup1                                     // slot0, slot0
+        sload                                    // length, slot0
+        dup1                                     // length, length, slot0
+        dup3                                     // slot0, length, length, slot0
+        0x00 mstore                              // length, length, slot0
+        0x20
+        0x00
+        sha3                                     // slotM, length, length, slot0
+        add                                      // slot, length, slot0
+        0x04 calldataload                        // value, slot, length, slot0
+        swap1                                    // slot, value, length, slot0
+        sstore                                   // length, slot0
+        0x01 add                                 // length+1, slot0
+        swap1                                    // slot0, length+1
+        sstore
+        stop
+        
+
+    popp:
+        [FREE_STORAGE]                           // slot0
+        dup1                                     // slot0, slot0
+        sload                                    // length, slot0
+        dup1                                     // length, length, slot0
+        iszero zero_array jumpi                  // length, slot0
+        0x01                                     // 1, length, slot0
+        swap1                                    // length, 1, slot0
+        sub                                      // length-1, slot0
+        swap1                                    // slot0, length-1
+        dup2                                     // length-1, slot0, length-1
+        dup2                                     // slot0, length-1, slot0, length-1
+        sstore                                   // slot0, length-1
+        0x00 mstore                              // length-1
+        0x20
+        0x00
+        sha3                                     // slotM, length-1
+        add                                      // slot
+        0x00                                     // 0, slot
+        swap1                                    // slot, 0
+        sstore
+        stop
+
+    read:
+        [FREE_STORAGE]                           // slot0
+        0x04 calldataload                        // index, slot0
+        dup1                                     // index, index, slot0
+        0x01 add                                 // index+1, index, slot0
+        dup3                                     // slot0, index+1, index, slot0
+        sload                                    // length, index+1, index, slot0
+        lt out_of_bounds jumpi                   // index, slot0
+        swap1                                    // slot0, index
+        0x00 mstore                              // index
+        0x20
+        0x00
+        sha3                                     // slotM, index
+        add                                      // slot
+        sload                                    // value
+        0x00 mstore
+        0x20 0x00 return
+
+
+
+    length:
+        [FREE_STORAGE]                           // slot0
+        sload                                    // length
+        0x00 mstore
+        0x20 0x00 return
+
+    write:
+        [FREE_STORAGE]                           // slot0
+        0x04 calldataload                        // index, slot0
+        dup1                                     // index, index, slot0
+        0x01 add                                 // index+1, index, slot0
+        dup3                                     // slot0, index+1, index, slot0
+        sload                                    // length, index+1, index, slot0
+        lt out_of_bounds jumpi                   // index, slot0
+        0x24 calldataload                        // value, index, slot0
+        swap2                                    // slot0, index, value
+        0x00 mstore                              // index, value
+        0x20
+        0x00
+        sha3                                     // slotM, index, value
+        add                                      // slot, value
+        sstore
+        stop
+
+    out_of_bounds:
+        __ERROR(OutOfBounds)
+        0x00 mstore
+        0x04 0x00 revert
+
+    zero_array:
+        __ERROR(ZeroArray)
+        0x00 mstore
+        0x04 0x00 revert
+
+
     
  }
